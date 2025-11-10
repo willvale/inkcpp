@@ -103,7 +103,7 @@ struct remove_cv<const volatile T> {
 
 template<class T>
 struct remove_cvref {
-	typedef std::remove_cv_t<std::remove_reference_t<T>> type;
+	typedef typename std::remove_cv_t<std::remove_reference_t<T>> type;
 };
 
 // == string testing (from me) ==
