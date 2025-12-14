@@ -26,6 +26,10 @@
 #	define INK_ENABLE_RTTI
 #endif
 
+#ifndef INKCPP_NO_ASSERT
+#	define INK_ENABLE_ASSERT
+#endif
+
 // Only turn on if you have json.hpp and you want to use it with the compiler
 // #define INK_EXPOSE_JSON
 

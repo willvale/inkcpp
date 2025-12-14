@@ -36,9 +36,16 @@
 #	define FORMAT_STRING_STR               "%hs"
 #else
 #	define inkZeroMemory     ink::internal::zero_memory
-#	define inkAssert         ink::ink_assert
-#	define inkFail(...)      ink::ink_assert(false, __VA_ARGS__)
-#	define FORMAT_STRING_STR "%s"
+#	define inkAssert(condition, text, ...)	ink::ink_assert(condition, text, ##__VA_ARGS__)
+#	define inkFail(...)											ink::ink_assert(false, ##__VA_ARGS__)
+#	define FORMAT_STRING_STR								"%s"
+#endif
+
+#ifndef INK_ENABLE_ASSERT
+# undef	inkAssert
+#	define inkAssert(condition, text, ...)	
+#	undef inkFail
+# define inkFail(...)
 #endif
 
 namespace ink
@@ -196,6 +203,7 @@ private:
 #endif
 
 // assert
+#ifdef INK_ENABLE_ASSERT
 #ifndef INK_ENABLE_UNREAL
 template<typename... Args>
 void ink_assert(bool condition, const char* msg = nullptr, Args... args)
@@ -222,6 +230,7 @@ template<typename... Args>
 	ink_assert(false, msg, args...);
 	exit(EXIT_FAILURE);
 }
+#endif
 #endif
 
 namespace runtime::internal
