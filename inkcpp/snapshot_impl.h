@@ -11,6 +11,11 @@
 #include "array.h"
 #include "choice.h"
 
+namespace ink::runtime
+{
+class story;
+} // namespace ink::runtime
+
 namespace ink::runtime::internal
 {
 class snap_choice
@@ -67,17 +72,18 @@ private:
 
 static_assert(sizeof(snap_tag) == sizeof(const char*));
 
-class snapshot_impl : public snapshot
+class snapshot_impl final : public snapshot
 {
 public:
-	~snapshot_impl() override
-	{
-		if (_managed) {
-			delete[] _file;
-		}
-	};
+	~snapshot_impl() override;
 
 	managed_array<const char*, true, 5>& strings() const { return string_table; }
+
+	managed_array<int, true, 5, true>& list_old_new_map() const { return list_old_new_map_table; }
+
+	managed_array<int, true, 5, true>& list_list_matches() const { return list_list_matches_table; }
+
+	managed_array<int, true, 5, true>& list_value_matches() const { return list_value_matches_table; }
 
 	const unsigned char* get_data() const override;
 	size_t               get_data_len() const override;
@@ -93,26 +99,44 @@ public:
 
 	const unsigned char* get_runner_snap(size_t idx) const { return _file + get_offset(idx + 1); }
 
+	const unsigned char* get_list_metadata() const { return _file + get_offset(num_runners() + 1); }
+
 	size_t num_runners() const override { return _header.num_runners; }
+
+	bool can_be_migrated() const override { return _header.migratable; }
+
+	bool can_be_migrated(const story&) const;
+
+	hash_t hash() const { return _header.hash; }
+
+	mutable const list_table* old_ref_table = nullptr;
 
 private:
 	// file information
 	// only populated when loading snapshots
 	mutable managed_array<const char*, true, 5> string_table;
+	mutable managed_array<int, true, 5, true>   list_old_new_map_table;
+	mutable managed_array<int, true, 5, true>   list_list_matches_table;
+	mutable managed_array<int, true, 5, true>   list_value_matches_table;
 	const unsigned char*                        _file;
 	size_t                                      _length;
 	bool                                        _managed;
-	static size_t                               file_size(size_t, size_t);
+	static size_t                               file_size(size_t, size_t, bool);
 
 	struct header {
 		size_t num_runners;
 		size_t length;
-
+		hash_t hash;
+		bool   migratable;
+		size_t version = 1;
 	} _header;
 
 	size_t get_offset(size_t idx) const
 	{
-		inkAssert(idx <= _header.num_runners, "Out of Bound access for runner in snapshot.");
+		inkAssert(
+		    idx <= _header.num_runners + (can_be_migrated() ? 1 : 0),
+		    "Out of Bound access for runner in snapshot."
+		);
 		return reinterpret_cast<const size_t*>(_file + sizeof(header))[idx];
 	}
 };

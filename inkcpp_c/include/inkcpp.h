@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,18 +69,41 @@ typedef struct HInkSTory    HInkStory;
 	struct HInkSnapshot;
 	/** @memberof HInkSnapshot
 	 *  @copydoc ink::runtime::snapshot::from_file()
+	 *  @attention only supported if build with STL libraries.
+	 *  @sa ink_snapshot_from_binary()
 	 */
 	HInkSnapshot* ink_snapshot_from_file(const char* filename);
+	/** @memberof HInkSnapshot
+	 *  @copydoc ink::runtime::snapshot::from_binary()
+	 */
+	HInkSnapshot*
+	     ink_snapshot_from_binary(const unsigned char* data, size_t length, bool freeOnDestroy);
 	/** @memberof HInkSnapshot
 	 *  @copydoc  ink::runtime::snapshot::num_runners()
 	 *  @param self
 	 */
-	int           ink_snapshot_num_runners(const HInkSnapshot* self);
+	int  ink_snapshot_num_runners(const HInkSnapshot* self);
 	/** @memberof HInkSnapshot
 	 *  @copydoc  ink::runtime::snapshot::write_to_file()
 	 *  @param self
+	 *  @attention only supported if build with STL libraries.
+	 *  @sa ink_snapshot_get_binary()
 	 */
-	void          ink_snapshot_write_to_file(const HInkSnapshot* self, const char* filename);
+	void ink_snapshot_write_to_file(const HInkSnapshot* self, const char* filename);
+	/** @memberof HInkSnapshot
+	 * @param self
+	 * @param[out] data pointer to snapshot data
+	 * @param[out] data_length length of snapshot data
+	 */
+	void ink_snapshot_get_binary(
+	    const HInkSnapshot* self, const unsigned char** data, size_t* data_length
+	);
+	/** @memberof HInkSnapshot
+	 * @copydoc ink::runtime::snapshot::can_be_migrated()
+	 * @param self
+	 * @retval True if the snapshot was taken at a simple state which can be migrated.
+	 */
+	bool ink_snapshot_can_be_migrated(const HInkSnapshot* self);
 
 	/** @class HInkChoice
 	 * @ingroup clib
@@ -159,6 +184,13 @@ typedef struct HInkSTory    HInkStory;
 	 */
 	int  ink_list_iter_next(InkListIter* self);
 
+#ifdef __GNUC__
+#else
+#	pragma warning(push)
+  // we use a anonymus union for convinence, feel free to change this in the future if problems
+  // should occure.
+#	pragma warning(disable : 4201)
+#endif
 	/** Repserentation of a ink variable.
 	 * @ingroup clib
 	 * The concret type contained is noted in @ref InkValue::type "type", please use this information
@@ -192,6 +224,10 @@ typedef struct HInkSTory    HInkStory;
 			ValueTypeList    ///< a ink list
 		} type;            ///< indicates type contained in value
 	};
+#ifdef __GNUC__
+#else
+#	pragma warning(pop)
+#endif
 
 	// const char* ink_value_to_string(const InkValue* self);
 
@@ -266,7 +302,7 @@ typedef struct HInkSTory    HInkStory;
 	 */
 	ink_hash_t        ink_hash_string(const char* str);
 	/** @memberof HInkRunner
-	 * @copydoc ink::runtime::runner_interface::knot_tag()
+	 * @copydoc ink::runtime::runner_interface::get_knot_tag()
 	 * @param self
 	 */
 	const char*       ink_runner_knot_tag(const HInkRunner* self, int index);
@@ -276,7 +312,7 @@ typedef struct HInkSTory    HInkStory;
 	 */
 	int               ink_runner_num_global_tags(const HInkRunner* self);
 	/** @memberof HInkRunner
-	 * @copydoc ink::runtime::runner_interface::global_tag()
+	 * @copydoc ink::runtime::runner_interface::get_global_tag()
 	 * @param self
 	 */
 	const char*       ink_runner_global_tag(const HInkRunner* self, int index);
@@ -381,9 +417,15 @@ typedef struct HInkSTory    HInkStory;
 	 */
 	struct HInkStory;
 	/** @memberof HInkStory
-	 *  @copydoc ink::runtime::story::from_file
+	 *  @copydoc ink::runtime::story::from_file()
+	 *  @attention only supported if build with STL libraries.
+	 *  @sa ink_story_from_binary()
 	 */
 	HInkStory*   ink_story_from_file(const char* filename);
+	/** @memberof HInkStory
+	 * @copydoc ink::runtime::story::from_binary()
+	 */
+	HInkStory*   ink_story_from_binary(const unsigned char* data, size_t length, bool freeOnDestroy);
 	/** @memberof HInkStory
 	 * deletes a story and all assoziated resources
 	 * @param self

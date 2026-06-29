@@ -20,6 +20,7 @@ FetchContent_Declare(
 	URL_HASH SHA256=26f4e188e02536d6e99e73e71d9b13e2c2144187f1368a87e82fd5066176cff8
 	SOURCE_DIR "${CMAKE_BINARY_DIR}/inklecate/linux")
 set(FETCHCONTENT_QUIET OFF)
+set(CMAKE_TLS_VERIFY ON)
 mark_as_advanced(FETCHCONTENT_QUIET)
 set(CMAKE_TLS_VERIFY true)
 mark_as_advanced(CMAKE_TLS_VERIFY)
@@ -41,36 +42,43 @@ mark_as_advanced(PYBIND11_USE_CROSSCOMPILING)
 enable_testing()
 
 # Project setup
-project(inkcpp VERSION 0.1.9)
+project(inkcpp VERSION 0.1.11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INSTALL_LIBRARY_DIR lib)
 set(CMAKE_INSTALL_INCLUDE_DIR include)
-
+if(MSVC)
+	# disable: aligment problems non explicit switch case
+	add_compile_options(/W4 /wd4820 /wd4061 -D_CRT_SECURE_NO_WARNINGS)
+else()
+	add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 # Add subdirectories
 include(CMakeDependentOption)
 option(INKCPP_PY "Build python bindings" OFF)
 cmake_dependent_option(WHEEL_BUILD "Set for build wheel python lib. (see setup.py for ussage)" OFF
 											 "INKCPP_PY" OFF)
 option(INKCPP_C "Build c library" OFF)
-option(INKCPP_TEST "Build inkcpp tests (requires: inklecate in path / env: INKLECATE set \
-	/ INKCPP_INKLECATE=OS or ALL)" OFF)
+option(INKCPP_TEST "Build inkcpp tests (requires: inklecate in path OR env: INKLECATE set \
+	OR INKCPP_INKLECATE=OS or ALL)" OFF)
 set(INKCPP_INKLECATE
 		"NONE"
 		CACHE STRING "If inklecate should be downloaded automatically from the official release page. \
 			NONE -> No, OS -> Yes, but only for the current OS, ALL -> Yes, for all availible OSs")
 set_property(CACHE INKCPP_INKLECATE PROPERTY STRINGS "NONE" "OS" "ALL")
-option(INKCPP_NO_EH "Disable try/catch in runtime. Used to build without error handling." OFF)
 option(INKCPP_NO_RTTI
 			 "Disable real time type information depended code. Used to build without RTTI." OFF)
+option(INKCPP_NO_STD "Disables the use of C(++) std libs." OFF)
 
-if(INKCPP_NO_EH)
-	add_definitions(-DINKCPP_NO_EH)
-endif()
 if(INKCPP_NO_RTTI)
 	add_definitions(-DINKCPP_NO_RTTI)
 endif()
-
+if(INKCPP_NO_EXCEPTIONS)
+	add_definitions(-DINKCPP_NO_EXCEPTIONS)
+endif()
+if(INKCPP_NO_STD)
+	add_definitions(-DINKCPP_NO_STD)
+endif()
 string(TOUPPER "${INKCPP_INKLECATE}" inkcpp_inklecate_upper)
 if(inkcpp_inklecate_upper STREQUAL "ALL")
 	FetchContent_MakeAvailable(inklecate_windows inklecate_mac inklecate_linux)

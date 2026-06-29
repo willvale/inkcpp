@@ -38,7 +38,7 @@ class runner_interface
 public:
 	virtual ~runner_interface(){};
 
-	// String type to simplify interfaces working with strings
+/** String type to simplify interfaces working with strings */
 #ifdef INK_ENABLE_STL
 	using line_type = std::string;
 #elif defined(INK_ENABLE_UNREAL)
@@ -54,15 +54,28 @@ public:
 	virtual void set_rng_seed(uint32_t seed) = 0;
 
 	/**
-	 * Moves the runner to the specified path
+	 * Moves the runner to the specified path.
+	 *
+	 * @sa move_to(const char*) for more conviance
 	 *
 	 * Clears any execution context and moves the runner
-	 *  to the content at the specified path.
+	 * to the content at the specified path.
 	 *
 	 * @param path path to search and move execution to
 	 * @return If the path was found
 	 */
 	virtual bool move_to(hash_t path) = 0;
+
+	/**
+	 * Moves the runner to the specified path.
+	 *
+	 * Clears any execution context and moves the runner
+	 * to the content at the specified path.
+	 *
+	 * @param path path to search and move execution to
+	 * @return If the path was found
+	 */
+	bool move_to(const char* path) { return move_to(ink::hash_string(path)); }
 
 	/**
 	 * Can the runner continue?
@@ -83,7 +96,6 @@ public:
 	 */
 	virtual snapshot* create_snapshot() const = 0;
 
-#ifdef INK_ENABLE_CSTD
 	/**
 	 * Continue execution until the next newline, then allocate a c-style
 	 * string with the output. This allocated string is managed by the runtime
@@ -93,7 +105,6 @@ public:
 	 * @return allocated c-style string with the output of a single line of execution
 	 */
 	virtual const char* getline_alloc() = 0;
-#endif
 
 #if defined(INK_ENABLE_STL) || defined(INK_ENABLE_UNREAL)
 	/**
@@ -200,14 +211,14 @@ public:
 	 * Check if the there are global tags.
 	 *
 	 * @return ture if there are global tags.
-	 * @info global tags  are also assoziated to the first line in the knot/stitch
+	 * @note global tags  are also assoziated to the first line in the knot/stitch
 	 * @sa num_global_tags get_global_tags  has_tags has_knot_tags
 	 */
 	virtual bool has_global_tags() const = 0;
 
 	/**
 	 * Get Number of global tags.
-	 * @info global tags  are also assoziated to the first line in the knot/stitch
+	 * @note global tags  are also assoziated to the first line in the knot/stitch
 	 * @sa has_global_tags get_global_tags num_knot_tags num_tags
 	 * @return the number of tags at the top of the document.
 	 */
@@ -230,7 +241,7 @@ public:
 	/**
 	 * Check if there are knot/stitch tags.
 	 *
-	 * @info knot/stitch tags  are also assoziated to the first line in the knot/stitch
+	 * @note knot/stitch tags  are also assoziated to the first line in the knot/stitch
 	 * @return true if there are knot/stitch tags.
 	 * @sa num_knot_tags get_knot_tag has_global_tags has_tags
 	 */
@@ -238,7 +249,7 @@ public:
 
 	/**
 	 * Get Number of knot/stitch tags.
-	 * @info knot/stitch tags are also assoziated to the first line in the knot/stitch
+	 * @note knot/stitch tags are also assoziated to the first line in the knot/stitch
 	 * @return number of tags at the top of a knot/stitch
 	 * @sa has_knot_tags get_knot_tag num_global_tags num_tags
 	 */

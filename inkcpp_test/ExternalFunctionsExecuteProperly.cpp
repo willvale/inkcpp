@@ -8,12 +8,16 @@
 
 using namespace ink::runtime;
 
-SCENARIO("a story with an external function evaluates the function at the right time", "[story]")
+SCENARIO(
+    "a story with an external function evaluates the function at the right time",
+    "[external-functions][runtime]"
+)
 {
 	GIVEN("a story with an external function")
 	{
-		auto ink    = story::from_file(INK_TEST_RESOURCE_DIR "ExternalFunctionsExecuteProperly.bin");
-		auto thread = ink->new_runner().cast<internal::runner_impl>();
+		std::unique_ptr<story> ink{story::from_file(INK_TEST_RESOURCE_DIR
+		                                            "ExternalFunctionsExecuteProperly.bin")};
+		auto                   thread = ink->new_runner().cast<internal::runner_impl>();
 
 		std::stringstream debug;
 		thread->set_debug_enabled(&debug);

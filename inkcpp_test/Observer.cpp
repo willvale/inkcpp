@@ -1,6 +1,7 @@
 #include "catch.hpp"
+#include "system.h"
+#include "../runner_impl.h"
 
-#include <../runner_impl.h>
 #include <choice.h>
 #include <compiler.h>
 #include <globals.h>
@@ -9,22 +10,28 @@
 
 using namespace ink::runtime;
 
-SCENARIO("Observer", "[variables][observer]")
+SCENARIO("Observer", "[observer][globals][runtime]")
 {
 	GIVEN("a story which changes variables")
 	{
-		auto ink     = story::from_file(INK_TEST_RESOURCE_DIR "ObserverStory.bin");
-		auto globals = ink->new_globals();
-		auto thread  = ink->new_runner(globals).cast<internal::runner_impl>();
+		std::unique_ptr<story> ink{story::from_file(INK_TEST_RESOURCE_DIR "ObserverStory.bin")};
+		auto                   globals = ink->new_globals();
+		auto                   thread  = ink->new_runner(globals).cast<internal::runner_impl>();
 
 		std::stringstream debug;
 		thread->set_debug_enabled(&debug);
 
-		WHEN("Run without observers")
+		WHEN("the story runs with no observers registered")
 		{
-			CHECK(thread->getall() == "hello line 1 1 hello line 2 5 test line 3 5\n");
+			std::string out = thread->getall();
+
+			THEN("the output is correct")
+			{
+				CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
+			}
 		}
-		WHEN("Run with observers read only, with specific type")
+
+		WHEN("typed observers are registered for var1 and var2")
 		{
 			int  var1_cnt = 0;
 			auto var1     = [&var1_cnt](int32_t i) {
@@ -48,11 +55,15 @@ SCENARIO("Observer", "[variables][observer]")
 			globals->observe("var2", var2);
 			std::string out = thread->getall();
 
-			CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
-			CHECK(var1_cnt == 2);
-			CHECK(var2_cnt == 2);
+			THEN("the output is correct and each observer is called the expected number of times")
+			{
+				CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
+				CHECK(var1_cnt == 2);
+				CHECK(var2_cnt == 2);
+			}
 		}
-		WHEN("Run with generic observer")
+
+		WHEN("generic value observers are registered for var1 and var2")
 		{
 			int  var1_cnt = 0;
 			auto var1     = [&var1_cnt](value v) {
@@ -78,11 +89,15 @@ SCENARIO("Observer", "[variables][observer]")
 			globals->observe("var2", var2);
 			std::string out = thread->getall();
 
-			CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
-			CHECK(var1_cnt == 2);
-			CHECK(var2_cnt == 2);
+			THEN("the output is correct and each observer is called the expected number of times")
+			{
+				CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
+				CHECK(var1_cnt == 2);
+				CHECK(var2_cnt == 2);
+			}
 		}
-		WHEN("Bind multiple observer to same variables")
+
+		WHEN("the same observer is bound twice to the same variable")
 		{
 			int  var1_cnt = 0;
 			auto var1     = [&var1_cnt](int32_t i) {
@@ -96,16 +111,25 @@ SCENARIO("Observer", "[variables][observer]")
 			globals->observe("var1", var1);
 			std::string out = thread->getall();
 
-			CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
-			CHECK(var1_cnt == 4);
+			THEN("the observer is called twice per change and the output is correct")
+			{
+				CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
+				CHECK(var1_cnt == 4);
+			}
 		}
-		WHEN("Run with missmatching type")
+
+		WHEN("an observer with a mismatching type is registered")
 		{
-			auto var1 = [](uint32_t i) {
+			auto var1 = [](uint32_t) {
 			};
-			CHECK_THROWS(globals->observe("var1", var1));
+
+			THEN("registering the observer throws an exception")
+			{
+				CHECK_THROWS_AS(globals->observe("var1", var1), ink::ink_exception);
+			}
 		}
-		WHEN("Just get pinged")
+
+		WHEN("a no-argument ping observer is registered for var1")
 		{
 			int  var1_cnt = 0;
 			auto var1     = [&var1_cnt]() {
@@ -114,23 +138,26 @@ SCENARIO("Observer", "[variables][observer]")
 			globals->observe("var1", var1);
 			std::string out = thread->getall();
 
-			CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
-			CHECK(var1_cnt == 2);
+			THEN("the output is correct and the observer is pinged once per change")
+			{
+				CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
+				CHECK(var1_cnt == 2);
+			}
 		}
-		WHEN("call with new and old value")
+
+		WHEN("observers receiving both new and old values are registered")
 		{
 			int  var1_cnt = 0;
 			auto var1     = [&var1_cnt](int32_t i, ink::optional<int32_t> o_i) {
         if (var1_cnt++ == 0) {
-					CHECK(i == 1);
-					CHECK_FALSE(o_i.has_value());
-				} else {
-					CHECK(i == 5);
-					CHECK(o_i.has_value());
-					CHECK(o_i.value() == 1);
-				}
+          CHECK(i == 1);
+          CHECK_FALSE(o_i.has_value());
+        } else {
+          CHECK(i == 5);
+          CHECK(o_i.has_value());
+          CHECK(o_i.value() == 1);
+        }
 			};
-
 			int  var2_cnt = 0;
 			auto var2     = [&var2_cnt](value v, ink::optional<value> o_v) {
         CHECK(v.type == value::Type::String);
@@ -151,11 +178,18 @@ SCENARIO("Observer", "[variables][observer]")
 			globals->observe("var2", var2);
 			std::string out = thread->getall();
 
-			CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
-			CHECK(var1_cnt == 2);
-			CHECK(var2_cnt == 2);
+			THEN(
+			    "each observer receives the correct new and old values and is called the expected number "
+			    "of times"
+			)
+			{
+				CHECK(out == "hello line 1 1 hello line 2 5 test line 3 5\n");
+				CHECK(var1_cnt == 2);
+				CHECK(var2_cnt == 2);
+			}
 		}
-		WHEN("Changing Same value at runtime")
+
+		WHEN("an observer modifies the same variable it is observing at runtime")
 		{
 			int  var1_cnt = 0;
 			auto var1     = [&var1_cnt, &globals](int32_t i) {
@@ -172,11 +206,15 @@ SCENARIO("Observer", "[variables][observer]")
 			globals->observe("var1", var1);
 			std::string out = thread->getall();
 
-			CHECK(8 == globals->get<int32_t>("var1").value());
-			CHECK(out == "hello line 1 1 hello line 2 8 test line 3 8\n");
-			CHECK(var1_cnt == 3);
+			THEN("the modification is reflected in the output and the observer is called an extra time")
+			{
+				CHECK(globals->get<int32_t>("var1").value() == 8);
+				CHECK(out == "hello line 1 1 hello line 2 8 test line 3 8\n");
+				CHECK(var1_cnt == 3);
+			}
 		}
-		WHEN("Changing Sam value at bind time")
+
+		WHEN("an observer modifies the same variable it is observing at bind time")
 		{
 			int  var1_cnt = 0;
 			auto var1     = [&var1_cnt, &globals](int32_t i) {
@@ -193,11 +231,15 @@ SCENARIO("Observer", "[variables][observer]")
 			globals->observe("var1", var1);
 			std::string out = thread->getall();
 
-			CHECK(5 == globals->get<int32_t>("var1").value());
-			CHECK(out == "hello line 1 8 hello line 2 5 test line 3 5\n");
-			CHECK(var1_cnt == 3);
+			THEN("the bind-time modification propagates and the story uses the modified value first")
+			{
+				CHECK(globals->get<int32_t>("var1").value() == 5);
+				CHECK(out == "hello line 1 8 hello line 2 5 test line 3 5\n");
+				CHECK(var1_cnt == 3);
+			}
 		}
-		WHEN("Changing Same value multiple times")
+
+		WHEN("an observer modifies the same variable multiple times in a chain")
 		{
 			int  var1_cnt = 0;
 			auto var1     = [&var1_cnt, &globals](int32_t i) {
@@ -217,11 +259,15 @@ SCENARIO("Observer", "[variables][observer]")
 			globals->observe("var1", var1);
 			std::string out = thread->getall();
 
-			CHECK(5 == globals->get<int32_t>("var1").value());
-			CHECK(out == "hello line 1 10 hello line 2 5 test line 3 5\n");
-			CHECK(var1_cnt == 4);
+			THEN("each chained modification triggers the observer and the story reflects the final value")
+			{
+				CHECK(globals->get<int32_t>("var1").value() == 5);
+				CHECK(out == "hello line 1 10 hello line 2 5 test line 3 5\n");
+				CHECK(var1_cnt == 4);
+			}
 		}
-		WHEN("Changing Other value")
+
+		WHEN("an observer for var1 modifies a different variable var2")
 		{
 			int  var1_cnt = 0;
 			auto var1     = [&var1_cnt, &globals](int32_t i) {
@@ -241,9 +287,15 @@ SCENARIO("Observer", "[variables][observer]")
 			globals->observe("var2", var2);
 			std::string out = thread->getall();
 
-			CHECK(out == "hello line 1 1 didum line 2 5 test line 3 5\n");
-			CHECK(var1_cnt == 2);
-			CHECK(var2_cnt == 3);
+			THEN(
+			    "the cross-variable modification is reflected in the output and var2's observer is "
+			    "triggered the extra time"
+			)
+			{
+				CHECK(out == "hello line 1 1 didum line 2 5 test line 3 5\n");
+				CHECK(var1_cnt == 2);
+				CHECK(var2_cnt == 3);
+			}
 		}
 	}
 }

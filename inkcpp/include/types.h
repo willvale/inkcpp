@@ -113,6 +113,20 @@ public:
 		}
 	}
 
+	constexpr value& operator=(const value& v)
+	{
+		type = v.type;
+		switch (type) {
+			case Type::Bool: v_bool = v.v_bool; break;
+			case Type::Uint32: v_uint32 = v.v_uint32; break;
+			case Type::Int32: v_int32 = v.v_int32; break;
+			case Type::String: v_string = v.v_string; break;
+			case Type::Float: v_float = v.v_float; break;
+			case Type::List: v_list = v.v_list; break;
+		}
+		return *this;
+	}
+
 	/// @}
 
 	/** Get value to corresponding type
@@ -126,45 +140,51 @@ public:
 	}
 };
 
-/** access #value::Type::Bool value */
+/** access a @ref ink::runtime::value::Type::Bool value */
 template<>
 inline const auto& value::get<value::Type::Bool>() const
 {
+	inkAssert(type == value::Type::Bool, "Expected type bool, if a boolean should be readed");
 	return v_bool;
 }
 
-/** access #value::Type::Uint32 value */
+/** access a @ref ink::runtime::value::Type::Uint32 value */
 template<>
 inline const auto& value::get<value::Type::Uint32>() const
 {
+	inkAssert(type == value::Type::Uint32, "Expected type uint32, if a boolean should be readed");
 	return v_uint32;
 }
 
-/** access #value::Type::Int32 value */
+/** access @ref ink::runtime::value::Type::Int32 value */
 template<>
 inline const auto& value::get<value::Type::Int32>() const
 {
+	inkAssert(type == value::Type::Int32, "Expected type int32, if a boolean should be readed");
 	return v_int32;
 }
 
-/** access #value::Type::String value */
+/** access @ref ink::runtime::value::Type::String value */
 template<>
 inline const auto& value::get<value::Type::String>() const
 {
+	inkAssert(type == value::Type::String, "Expected type string, if a boolean should be readed");
 	return v_string;
 }
 
-/** access #value::Type::Float value */
+/** access @ref ink::runtime::value::Type::Float value */
 template<>
 inline const auto& value::get<value::Type::Float>() const
 {
+	inkAssert(type == value::Type::Float, "Expected type float, if a boolean should be readed");
 	return v_float;
 }
 
-/** access #value::Type::List value */
+/** access @ref ink::runtime::value::Type::List value */
 template<>
 inline const auto& value::get<value::Type::List>() const
 {
+	inkAssert(type == value::Type::List, "Expected type list, if a boolean should be readed");
 	return v_list;
 }
 } // namespace ink::runtime

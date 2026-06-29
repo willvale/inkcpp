@@ -44,12 +44,18 @@ KeyFeatures: snapshots, observers, binding ink functions, support ink [function 
 ## Unreal Plugin
 
 InkCPP is available via the [UE Marketplace](https://www.unrealengine.com/marketplace/product/inkcpp).
+Since the Unrea Marketplace does not allow for bundling executables, you must install inklecate by hand.
+If you add the first asset you will get prompted to download the correct version. Alternativly download [inklecate v1.1.1](https://github.com/inkle/ink/releases/tag/v1.1.1) unzip it and set `Project Settings > Plugins > InkCPP > Inklecate Executable Path` to the path.
+
 
 Alternativly is the latest version of the UE plugin can be downloaded from the [release page](https://github.com/JBenda/inkcpp/releases/latest) (`unreal.zip`).
-Place the content of this file at your plugin folder of your UE project and at the next start up it will be intigrated.
+Place the content of this file at a location of your choice and run the following command to build the Plugin.
+```sh
+\PATH\TO\UNREAL_ENGINE\Build\BatchFiles\RunUAT.bat BuildPlugin -plugin=<location_of_your_choice>\inkcpp\inkcpp.uplugin -package=GameProject\Plugins\inkcpp -TargetPlatforms=Win64 # compile plugin
+```
 
 
-A example project can be found [here](https://jbenda.github.io/inkcpp/unreal/InkCPP_DEMO.zip). And here the [Documentation](https://jbenda.github.io/inkcpp/html/group__unreal.html). 
+A example project can be found [here](https://jbenda.github.io/inkcpp/unreal/InkCPP_DEMO.zip). And here the [Documentation](https://jbenda.github.io/inkcpp/html/group__unreal.html).
 
 Code for the Unreal plugin is located in the `unreal` directory. In order to install it, run
 ```sh
@@ -57,12 +63,14 @@ mkdir build
 cd build
 mkdir plugin
 mkdir plugin-build
-cmake -DINKCPP_UNREAL_TARGET_VERSION="5.5" ..
-cmake --install . --component unreal --prefix .\plugin  # create source files for plugin
-\PATH\TO\UNREAL_ENGINE\Build\BatchFiles\RunUAT.bat BuildPlugin -plugin=GIT_REPO\build\plugin\inkcpp\inkcpp.uplugin -package=GIT_REPO\build\plugin-build\inkcpp -TargetPlatforms=Win64 # compile plugin
-move plugin-build\inkcpp UE_ENGINE\Engine\Plugins\inkcpp
+cmake -DINKCPP_UNREAL_TARGET_VERSION="5.7" -DINKCPP_UNREAL=ON -DINKCPP_INKLECATE=OS -DINKCPP_UNREAL_RunUAT_PATH=\Path\TO\UNREAL_ENGINE\Build\BatchFiles\RunUAT.bat -DINKCPP_UNREAL_TARGET_PLATFORM=Win64 ..
+# to set the variables with a GUI use
+# cmake ..
+# cmage-gui .
+cmake --build . --target unreal
+cmake --install . --componunt unreal_plugin --perifx ./your_project/Plugins # --prefix = path to global Plugins directory  of UE or to your GameProject
 ```
-Adapt `TargetPlatforms` as nessesarry. You might also want to install the Plugin directly into a project or the in UE5.5 introduced external plugin directory. Just adapt the pathets accordendly.
+Adapt `TargetPlatforms` as nessesarry. You might also want to install the Plugin directly into a project or the in UE5.5 introduced external plugin directory. Just adapt the pathes accordendly.
 
 ## Use standalone
 
@@ -74,7 +82,7 @@ Adapt `TargetPlatforms` as nessesarry. You might also want to install the Plugin
 Nice features for testing:
 + predefined choice selection `echo 1 2 1  | inkpp-cl -p story.(ink|json|bin)`
 + create snapshots to shorten testing:
-	+ create snapshot by entering `-1` as choice `echo 1 2 -1 | inkcpp-cl -p story.ink`
+	+ create snapshot by entering `-1` as choice `echo 1 2 -1 1 | inkcpp-cl -p story.ink`
  	+ load snapshot as an additional argument `echo 1 | inkcpp-cl -p story.snap story.ink`
 
 ## Including in C++ Code
@@ -104,6 +112,7 @@ Instructions:
 #include <ink/story.h>
 #include <ink/runner.h>
 #include <ink/choice.h>
+#include <memory.h>
 
 using namespace ink::runtime;
 
@@ -112,7 +121,7 @@ int MyInkFunction(int a, int b) { return a + b; }
 ...
 
 // Load ink binary story, generated from the inkCPP compiler
-story* myInk = story::from_file("test.bin");
+std::unique_ptr<story> myInk{story::from_file("test.bin")};
 
 // Create a new thread
 runner thread = myInk->new_runner();
@@ -208,6 +217,6 @@ The python bindnigs are defined in `inkcpp_python` subfolder.
 ## Dependencies
 The compiler depends on Nlohmann's JSON library and the C++ STL.
 
-The runtime does not depend on either. If `INK_ENABLE_STL` is defined then STL extensions are added such as stream operators and `std::string` support. If `INK_ENABLE_UNREAL`, then FStrings, Delegates and other Unreal classes will be supported. 
+The runtime does not depend on either. If `INK_ENABLE_STL` is defined then STL extensions are added such as stream operators and `std::string` support. If `INK_ENABLE_UNREAL`, then FStrings, Delegates and other Unreal classes will be supported.
 
 NOTE: There is still some lingering C standard library calls in the runtime. I will be guarding them with an `INK_ENABLE_CSTD` or something soon.

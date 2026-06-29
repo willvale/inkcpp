@@ -12,7 +12,7 @@
 #	include <ostream>
 #endif
 
-#ifdef INK_BUILD_CLIB
+#ifdef INKCPP_BUILD_CLIB
 struct InkListIter;
 struct HInkList;
 int ink_list_flags(const HInkList*, InkListIter*);
@@ -48,6 +48,11 @@ public:
 	{
 	}
 
+	/** copy assigment operator. */
+	virtual list_interface& operator=(const list_interface&) = default;
+
+	virtual ~list_interface() {}
+
 	/** iterater for flags in a list
 	 * @todo implement `operator->`
 	 */
@@ -59,7 +64,7 @@ public:
 		int                   _i;
 		bool                  _one_list_iterator; ///< iterates only though values of one list
 		friend list_interface;
-#ifdef INK_BUILD_CLIB
+#ifdef INKCPP_BUILD_CLIB
 		friend int ::ink_list_flags(const HInkList*, InkListIter*);
 		friend int ::ink_list_flags_from(const HInkList*, const char*, InkListIter*);
 		friend int ::ink_list_iter_next(InkListIter* self);
@@ -67,9 +72,7 @@ public:
 
 	protected:
 		/** @private */
-		iterator(
-		    const char* flag_name, const list_interface& list, size_t i, bool one_list_only = false
-		)
+		iterator(const char* flag_name, const list_interface& list, int i, bool one_list_only = false)
 		    : _flag_name(flag_name)
 		    , _list_name(nullptr)
 		    , _list(list)
@@ -79,6 +82,9 @@ public:
 		}
 
 	public:
+		/** copy constructor. */
+		iterator(const iterator&) = default;
+
 		/** contains flag data */
 		struct Flag {
 			const char* flag_name; ///< name of the flag
@@ -97,7 +103,7 @@ public:
 		};
 
 		/** access value the iterator is pointing to */
-		Flag operator*() const { return Flag{ _flag_name, _list_name }; };
+		Flag operator*() const { return Flag{_flag_name, _list_name}; };
 
 		/** continue iterator to next value */
 		iterator& operator++()
@@ -115,7 +121,19 @@ public:
 		 * @param itr other iterator
 		 */
 		bool operator==(const iterator& itr) const { return itr._i == _i; }
+
+		iterator& operator=(const iterator&) = delete;
 	};
+
+
+#ifdef __GNUC__
+#	pragma GCC diagnostic push
+#	pragma GCC diagnostic ignored "-Wunused-parameter"
+#else
+#	pragma warning(push)
+// non functional prototypes do not need the argument.
+#	pragma warning(disable : 4100)
+#endif
 
 	/** checks if a flag is contained in the list */
 	virtual bool contains(const char* flag) const
@@ -166,6 +184,12 @@ private:
 		inkAssert(false, "Not implemented funciton from interface is called!");
 	};
 
+#ifdef __GNUC__
+#	pragma GCC diagnostic pop
+#else
+#	pragma warning(pop)
+#endif
+
 protected:
 	/** @private */
 	iterator new_iterator(const char* flag_name, int i, bool one_list_only = false) const
@@ -185,4 +209,5 @@ protected:
 	/** @private */
 	int                   _list;
 };
+
 } // namespace ink::runtime

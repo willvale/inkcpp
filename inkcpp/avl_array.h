@@ -44,8 +44,6 @@
 
 #include "system.h"
 
-#include <cstdint>
-
 /**
  * \param Key The key type. The type (class) must provide a 'less than' and 'equal to' operator
  * \param T The Data type
@@ -67,14 +65,16 @@ class avl_array
 
 	// node storage, due to possible structure packing effects, single arrays are used instead of a
 	// 'node' structure
-	ink::runtime::internal::if_t<dynamic, Key*, Key[Size]>                 key_;
-	ink::runtime::internal::if_t<dynamic, T*, T[Size]>                     val_;
-	ink::runtime::internal::if_t<dynamic, std::int8_t*, std::int8_t[Size]> balance_;
-	ink::runtime::internal::if_t<dynamic, child_type*, child_type[Size]>   child_;
-	size_type                                                              size_; // actual size
-	size_t                                                                 _capacity;
-	size_type                                                              root_; // root node
+	ink::runtime::internal::if_t<dynamic, Key*, Key[Size]>               key_;
+	ink::runtime::internal::if_t<dynamic, T*, T[Size]>                   val_;
+	ink::runtime::internal::if_t<dynamic, child_type*, child_type[Size]> child_;
+	size_type                                                            size_; // actual size
+	size_type                                                            _capacity;
+	size_type                                                            root_; // root node
 	ink::runtime::internal::if_t<dynamic, size_type*, size_type[Fast ? Size : 1]> parent_;
+
+	using balance_type = signed char;
+	ink::runtime::internal::if_t<dynamic, balance_type*, balance_type[Size]> balance_;
 
 	// invalid index (like 'nullptr' in a pointer implementation)
 	static const size_type INVALID_IDX = ~static_cast<size_type>(0);
@@ -114,6 +114,12 @@ class avl_array
 			return *this;
 		}
 
+		tag_avl_array_iterator(const tag_avl_array_iterator& other)
+		    : instance_{other.instance_}
+		    , idx_{other.idx_}
+		{
+		}
+
 		inline bool operator==(const tag_avl_array_iterator& rhs) const { return idx_ == rhs.idx_; }
 
 		inline bool operator!=(const tag_avl_array_iterator& rhs) const { return ! (*this == rhs); }
@@ -130,7 +136,7 @@ class avl_array
 		// returns unique number for each entry
 		// the numbers are unique as long no operation are executed
 		// on the avl
-		inline size_t temp_identifier() const { return instance_->size() - idx_ - 1; }
+		inline size_type temp_identifier() const { return instance_->size() - idx_ - 1; }
 
 		// preincrement
 		tag_avl_array_iterator& operator++()
@@ -193,7 +199,7 @@ public:
 		if constexpr (dynamic) {
 			key_     = new Key[Size];
 			val_     = new T[Size];
-			balance_ = new std::int8_t[Size];
+			balance_ = new balance_type[Size];
 			child_   = new child_type[Size];
 			if constexpr (Fast) {
 				parent_ = new size_type[Size];
@@ -208,6 +214,9 @@ public:
 			delete[] val_;
 			delete[] balance_;
 			delete[] child_;
+			if (parent_) {
+				delete[] parent_;
+			}
 		}
 	}
 
@@ -257,7 +266,7 @@ public:
 
 	void extend()
 	{
-		size_t new_size = _capacity * 1.5;
+		size_type new_size = _capacity + _capacity / 2;
 		if (new_size < 5) {
 			new_size = 5;
 		}
@@ -278,7 +287,7 @@ public:
 			val_ = new_data;
 		}
 		{
-			std::int8_t* new_data = new std::int8_t[new_size];
+			balance_type* new_data = new balance_type[new_size];
 			for (size_type i = 0; i < _capacity; ++i) {
 				new_data[i] = balance_[i];
 			}
@@ -653,7 +662,7 @@ private:
 		set_parent(target, get_parent(source));
 	}
 
-	void insert_balance(size_type node, std::int8_t balance)
+	void insert_balance(size_type node, balance_type balance)
 	{
 		while (node != INVALID_IDX) {
 			balance = (balance_[node] += balance);
@@ -684,7 +693,7 @@ private:
 		}
 	}
 
-	void delete_balance(size_type node, std::int8_t balance)
+	void delete_balance(size_type node, balance_type balance)
 	{
 		while (node != INVALID_IDX) {
 			balance = (balance_[node] += balance);

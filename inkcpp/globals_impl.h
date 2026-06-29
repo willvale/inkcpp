@@ -33,6 +33,19 @@ class globals_impl final
 public:
 	size_t               snap(unsigned char* data, const snapper&) const;
 	const unsigned char* snap_load(const unsigned char* data, const loader&);
+	bool                 can_be_migrated() const;
+	/** Merges a global snapshot with new global definition.
+	 * new global variables are taken from new_global.
+	 * already existing ones are ignored
+	 * no longer existing ones are deleted.
+	 * @retval true on success
+	 * @param[in] new_globals to read current relevant variables from. It is modified to be equal to
+	 * @param[in] list_metadata old list metadata to migrate list
+	 * the globals stored inside.
+	 */
+	bool                 migrate_new_globals(
+	                    const loader& loader, globals_impl& new_globals, const char* list_metadata
+	                );
 	// Initializes a new global store from the given story
 	globals_impl(const story_impl*);
 
@@ -51,9 +64,10 @@ protected:
 	void internal_observe(hash_t name, internal::callback_base* callback) override;
 
 public:
-	// Records a visit to a container
-	/// @param start_cmd iff the visit was initiatet through a MARKER_START_CONTAINER
-	void visit(uint32_t container_id, bool entering_at_start);
+	// Records a visit to a container.
+	// If preserve_turns is true the existing turns-since counter is kept intact
+	// (used during snapshot migration to avoid clobbering the restored value).
+	void visit(uint32_t container_id, bool preserve_turns = false);
 
 	// Checks the number of visits to a container
 	uint32_t visits(uint32_t container_id) const;
@@ -121,8 +135,9 @@ private:
 		bool operator!=(const visit_count& vc) const { return ! (*this == vc); }
 	};
 
-	managed_array<visit_count, true, 1> _visit_counts;
-	managed_array<visit_count, true, 1> _visit_counts_backup;
+	static constexpr visit_count visit_count_null_value{~0U, -2};
+
+	internal::allocated_restorable_array<visit_count> _visit_counts;
 
 	// Pointer back to owner story.
 	const story_impl* const _owner;
