@@ -425,9 +425,12 @@ void runner_impl::start_frame(uint32_t target)
 	}
 	_evaluation_mode = false; // unset eval mode when enter function or tunnel
 
+	// Do we visit the knot? In Ink, all visits count for e.g. knot tags.
+	const bool track_knot_visit = type == frame_type::function;
+
 	// Do the jump
 	inkAssert(_story->instructions() + target < _story->end(), "Diverting past end of story data!");
-	jump(_story->instructions() + target, true, false);
+	jump(_story->instructions() + target, true, track_knot_visit);
 }
 
 frame_type runner_impl::execute_return()
@@ -461,13 +464,16 @@ frame_type runner_impl::execute_return()
 		}
 	}
 
+	// Do we visit the knot? In Ink, all visits count for e.g. knot tags. Since we tracked the visit
+	// when entering the thread or tunnel, we need to track the return to where we came from.
+	const bool track_knot_visit = type == frame_type::function;
 
 	// Jump to the old offset
 	inkAssert(
 	    _story->instructions() + offset < _story->end(),
 	    "Callstack return is outside bounds of story!"
 	);
-	jump(_story->instructions() + offset, false, false);
+	jump(_story->instructions() + offset, false, track_knot_visit);
 
 	// Return frame type
 	return type;
