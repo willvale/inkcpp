@@ -43,8 +43,8 @@ public:
 	}
 
 	config::statistics::container statistics() const
-	{ 
-		return {static_cast<int>(_capacity), static_cast<int>(_size)}; 
+	{
+		return {static_cast<int>(_capacity), static_cast<int>(_size)};
 	}
 
 	virtual ~managed_array()
@@ -376,8 +376,8 @@ protected:
 
 private:
 	inline void check_index(size_t index) const
-	{ 
-		inkAssert(index < capacity(), "Index out of range!"); 
+	{
+		inkAssert(index < capacity(), "Index out of range!");
 	}
 
 	void clear_temp();
@@ -501,8 +501,8 @@ class fixed_restorable_array : public basic_restorable_array<T>
 public:
 	fixed_restorable_array(const T& initial, const T& nullValue)
 	    : basic_restorable_array<T>(_buffer, SIZE * 2, nullValue)
-	{ 
-		basic_restorable_array<T>::clear(initial); 
+	{
+		basic_restorable_array<T>::clear(initial);
 	}
 
 	const unsigned char*
@@ -575,8 +575,8 @@ private:
 
 template<typename T>
 inline bool basic_restorable_array<T>::can_be_migrated() const
-{ 
-	return ! _saved; 
+{
+	return ! _saved;
 }
 
 template<typename T>
@@ -596,7 +596,7 @@ inline size_t basic_restorable_array<T>::snap(unsigned char* data, const snapper
 
 template<typename T>
 inline const unsigned char* basic_restorable_array<T>::impl_snap_load_meta(const unsigned char* data
-	)
+)
 {
 	auto ptr = data;
 	ptr      = snap_read(ptr, _saved);
@@ -625,7 +625,7 @@ inline const unsigned char*
 
 template<typename T, size_t SIZE>
 inline const unsigned char* fixed_restorable_array<
-	T, SIZE>::snap_load(const unsigned char* data, const snapshot_interface::loader&)
+    T, SIZE>::snap_load(const unsigned char* data, const snapshot_interface::loader&)
 {
 	auto ptr = data;
 	ptr      = base::impl_snap_load_meta(ptr);
@@ -635,7 +635,7 @@ inline const unsigned char* fixed_restorable_array<
 
 template<typename T>
 inline const unsigned char* allocated_restorable_array<
-	T>::snap_load(const unsigned char* data, const snapshot_interface::loader&)
+    T>::snap_load(const unsigned char* data, const snapshot_interface::loader&)
 {
 	auto ptr = data;
 	ptr      = base::impl_snap_load_meta(ptr);
