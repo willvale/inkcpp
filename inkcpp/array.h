@@ -35,7 +35,7 @@ public:
 		if constexpr (dynamic) {
 			if constexpr (simple) {
 				_dynamic_data = reinterpret_cast<T*>(new char[sizeof(T) * initialCapacity]);
-				inkAssert((::size_t)_dynamic_data % alignof(T) == 0);
+				inkAssert(( ::size_t ) _dynamic_data % alignof(T) == 0);
 			} else {
 				_dynamic_data = new T[initialCapacity];
 			}
@@ -43,8 +43,8 @@ public:
 	}
 
 	config::statistics::container statistics() const
-	{
-		return {static_cast<int>(_capacity), static_cast<int>(_size)};
+	{ 
+		return {static_cast<int>(_capacity), static_cast<int>(_size)}; 
 	}
 
 	virtual ~managed_array()
@@ -199,8 +199,8 @@ public:
 
 private:
 	T*                     _dynamic_data = nullptr;
-	size_t                 _capacity = 0;
-	size_t                 _size = 0;
+	size_t                 _capacity     = 0;
+	size_t                 _size         = 0;
 	if_t<dynamic, char, T> _static_data[dynamic ? 1 : initialCapacity];
 };
 
@@ -275,14 +275,14 @@ void managed_array<T, dynamic, initialCapacity, simple>::extend(size_t capacity)
 	}
 	T* new_data = nullptr;
 	if constexpr (simple) {
-		// Warning: Allocating typed data in a char* container is potentially unsafe. We need to be sure the 
-		// alignment is compatible with the destination type...
+		// Warning: Allocating typed data in a char* container is potentially unsafe. We need to be sure
+		// the alignment is compatible with the destination type...
 		new_data = reinterpret_cast<T*>(new char[sizeof(T) * new_capacity]);
-		inkAssert((::size_t)new_data % alignof(T) == 0);
+		inkAssert(( ::size_t ) new_data % alignof(T) == 0);
 
-		// ...and we have to copy the contents byte-by-byte, since client code (_list_handouts) type-puns
-		// between two classes with different vtbls here. Copying these elementwise would change the stored
-		// C++ type.
+		// ...and we have to copy the contents byte-by-byte, since client code (_list_handouts)
+		// type-puns between two classes with different vtbls here. Copying these elementwise would
+		// change the stored C++ type.
 		memcpy(new_data, _dynamic_data, sizeof(T) * _capacity);
 	} else {
 		// Allocate and copy typed data normally
@@ -376,8 +376,8 @@ protected:
 
 private:
 	inline void check_index(size_t index) const
-	{
-		inkAssert(index < capacity(), "Index out of range!");
+	{ 
+		inkAssert(index < capacity(), "Index out of range!"); 
 	}
 
 	void clear_temp();
@@ -501,8 +501,8 @@ class fixed_restorable_array : public basic_restorable_array<T>
 public:
 	fixed_restorable_array(const T& initial, const T& nullValue)
 	    : basic_restorable_array<T>(_buffer, SIZE * 2, nullValue)
-	{
-		basic_restorable_array<T>::clear(initial);
+	{ 
+		basic_restorable_array<T>::clear(initial); 
 	}
 
 	const unsigned char*
@@ -575,8 +575,8 @@ private:
 
 template<typename T>
 inline bool basic_restorable_array<T>::can_be_migrated() const
-{
-	return ! _saved;
+{ 
+	return ! _saved; 
 }
 
 template<typename T>
@@ -596,7 +596,7 @@ inline size_t basic_restorable_array<T>::snap(unsigned char* data, const snapper
 
 template<typename T>
 inline const unsigned char* basic_restorable_array<T>::impl_snap_load_meta(const unsigned char* data
-)
+	)
 {
 	auto ptr = data;
 	ptr      = snap_read(ptr, _saved);
@@ -625,7 +625,7 @@ inline const unsigned char*
 
 template<typename T, size_t SIZE>
 inline const unsigned char* fixed_restorable_array<
-    T, SIZE>::snap_load(const unsigned char* data, const snapshot_interface::loader&)
+	T, SIZE>::snap_load(const unsigned char* data, const snapshot_interface::loader&)
 {
 	auto ptr = data;
 	ptr      = base::impl_snap_load_meta(ptr);
@@ -635,7 +635,7 @@ inline const unsigned char* fixed_restorable_array<
 
 template<typename T>
 inline const unsigned char* allocated_restorable_array<
-    T>::snap_load(const unsigned char* data, const snapshot_interface::loader&)
+	T>::snap_load(const unsigned char* data, const snapshot_interface::loader&)
 {
 	auto ptr = data;
 	ptr      = base::impl_snap_load_meta(ptr);
