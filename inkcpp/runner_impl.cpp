@@ -835,7 +835,7 @@ bool runner_impl::move_to(hash_t path)
 	// Clear state and move to destination
 	reset();
 	_ptr = _story->instructions();
-	const bool record_visits = false;
+	const bool record_visits    = false;
 	const bool track_knot_visit = false;
 	jump(destination, record_visits, track_knot_visit);
 
@@ -1256,8 +1256,8 @@ void runner_impl::step()
 					const bool record_visits    = true;
 					const bool track_knot_visit = ! (flag & CommandFlag::DIVERT_HAS_CONDITION);
 					jump(
-					    _story->instructions() + val->get<value_type::divert>(), 
-							record_visits, track_knot_visit
+					    _story->instructions() + val->get<value_type::divert>(), record_visits,
+					    track_knot_visit
 					);
 					inkAssert(_ptr < _story->end(), "Diverted past end of story data!");
 				} break;

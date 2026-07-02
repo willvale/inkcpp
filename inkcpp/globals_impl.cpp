@@ -32,9 +32,7 @@ globals_impl::globals_impl(const story_impl* story)
 
 void globals_impl::visit(uint32_t container_id)
 {
-	_visit_counts.set(
-	    container_id, {_visit_counts[container_id].visits + 1, 0}
-	);
+	_visit_counts.set(container_id, {_visit_counts[container_id].visits + 1, 0});
 }
 
 uint32_t globals_impl::visits(uint32_t container_id) const
