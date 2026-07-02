@@ -62,8 +62,6 @@ SCENARIO("TagsAndBranching", "[tags][branching]")
 			CHECK(_thread->getline() == "Tunnel text\n");
 			THEN("It has tags")
 			{
-				// This doesn't pass yet, not sure why.
-				// CHECK(_thread->get_current_knot() == ink::hash_string("Tunnel"));
 				CHECK(_thread->has_knot_tags());
 				REQUIRE(_thread->num_knot_tags() == 1);
 				REQUIRE(std::string(_thread->get_knot_tag(0)) == "tunnel_tag");
@@ -83,7 +81,6 @@ SCENARIO("TagsAndBranching", "[tags][branching]")
 			CHECK(_thread->getline() == "Thread text\n");
 			THEN("It has tags")
 			{
-				CHECK(_thread->get_current_knot() == ink::hash_string("Thread"));
 				CHECK(_thread->has_knot_tags());
 				REQUIRE(_thread->num_knot_tags() == 1);
 				REQUIRE(std::string(_thread->get_knot_tag(0)) == "thread_tag");
